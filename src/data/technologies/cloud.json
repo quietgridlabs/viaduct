@@ -1,0 +1,56 @@
+[
+  {
+    "id": "aws",
+    "name": "Amazon Web Services",
+    "color": "#ff9900",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "azure",
+    "name": "Microsoft Azure",
+    "color": "#0078d4",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "gcp",
+    "name": "Google Cloud Platform",
+    "color": "#4285f4",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "ibmcloud",
+    "name": "IBM Cloud",
+    "color": "#1261fe",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "oraclecloud",
+    "name": "Oracle Cloud",
+    "color": "#f80000",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "digitalocean",
+    "name": "DigitalOcean",
+    "color": "#0080ff",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "heroku",
+    "name": "Heroku",
+    "color": "#430098",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "vercel",
+    "name": "Vercel",
+    "color": "#f3f3f3",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "netlify",
+    "name": "Netlify",
+    "color": "#00c7b7",
+    "levels": ["system", "container"]
+  }
+]

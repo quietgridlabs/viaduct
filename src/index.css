@@ -1,0 +1,576 @@
+/* Fonts are linked from index.html — an @import here is discovered only after
+   the bundled CSS downloads, which delays first paint on the public pages. */
+
+:root {
+  /* Primary app font */
+  font-family:
+    'IBM Plex Sans',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Noto Sans',
+    Ubuntu,
+    Cantarell,
+    'Helvetica Neue',
+    sans-serif,
+    'Apple Color Emoji',
+    'Segoe UI Emoji',
+    'Segoe UI Symbol',
+    'Noto Color Emoji';
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'tnum' on, 'lnum' on;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  display: block;
+}
+
+/*
+ * Public pages (landing, docs, login) scroll the document itself instead of an
+ * inner div, so anchor links, scroll restoration and the mobile URL bar behave
+ * natively. The editor keeps the locked full-height viewport above.
+ */
+html[data-page-scroll='true'],
+html[data-page-scroll='true'] body,
+html[data-page-scroll='true'] #root {
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
+}
+
+html[data-page-scroll='true'] {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-page-scroll='true'] {
+    scroll-behavior: auto;
+  }
+}
+
+a {
+  font-weight: 500;
+  text-decoration: inherit;
+}
+
+.c4-magic-flow-dot {
+  pointer-events: none;
+}
+
+/* React Flow nodes don't inherit Chakra's color tokens — set them explicitly.
+   We use the same CSS var that Chakra writes on :root for the active color mode. */
+.react-flow__node-thread {
+  color: var(--chakra-colors-fg-default) !important;
+  color-scheme: dark light;
+}
+
+/* Thread nodes have their own visual selection state — suppress RF outline */
+.react-flow__node-thread.selected,
+.react-flow__node-thread:focus,
+.react-flow__node-thread:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/*
+ * Connection points.
+ *
+ * At rest they stay quiet so a dense diagram is not a field of dots. Pointing at
+ * a node brings its points forward; pointing at one point grows it into a filled
+ * circle with a plus — the affordance for "drag from here to connect".
+ *
+ * The colours come from the node: `color` is the element accent and
+ * `--handle-ink` the fill that stays legible on top of it (see canvasSurfaces).
+ */
+.react-flow .react-flow__handle {
+  opacity: 0.72;
+  transition: opacity 0.12s ease;
+}
+
+/* React Flow ships `cursor: crosshair` on connectable handles from a stylesheet
+   loaded after this one — match its specificity to hand back the pointer. */
+.react-flow .react-flow__handle,
+.react-flow .react-flow__handle.connectionindicator {
+  cursor: pointer;
+}
+
+/* A point with nothing plugged into it is not information — it is one of four
+   per card on a board that may hold hundreds. Hidden at rest; the rules below
+   bring every point back the moment someone could want to use one. */
+.react-flow .react-flow__handle[data-connected='false'] {
+  opacity: 0;
+}
+
+.react-flow__node:hover .react-flow__handle,
+.react-flow__node.selected .react-flow__handle,
+.react-flow__handle.connectionindicator:hover {
+  opacity: 1;
+}
+
+/* While a connection is being dragged every card is a possible destination, so
+   the whole board shows its points — including the ones the pointer is nowhere
+   near. */
+.react-flow:has(.react-flow__connectionline) .react-flow__handle,
+.react-flow .react-flow__handle.connectingfrom,
+.react-flow .react-flow__handle.connectingto {
+  opacity: 1;
+}
+
+/* The grown circle. */
+.react-flow__handle::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0;
+  transform: scale(0.55);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  pointer-events: none;
+}
+
+/* Two bars make a crisp plus at any zoom — no glyph metrics to fight. */
+.react-flow__handle::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 9999px;
+  opacity: 0;
+  background:
+    linear-gradient(var(--handle-ink, #fff), var(--handle-ink, #fff)) center / 9px 2px no-repeat,
+    linear-gradient(var(--handle-ink, #fff), var(--handle-ink, #fff)) center / 2px 9px no-repeat;
+  transition: opacity 0.12s ease;
+  pointer-events: none;
+}
+
+.react-flow__handle:hover::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.react-flow__handle:hover::after {
+  opacity: 1;
+}
+
+/* While a connection is being dragged, every valid target reads as one. */
+.react-flow__handle.connecting::before,
+.react-flow .react-flow__handle-connecting::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__handle,
+  .react-flow__handle::before,
+  .react-flow__handle::after {
+    transition: none;
+  }
+}
+
+/* Connections react to the pointer: thicker on hover, pointer cursor on the
+   whole hit area (React Flow renders an invisible fat path for the target). */
+.react-flow__edge {
+  cursor: pointer;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 2.4;
+}
+
+.react-flow__edge .react-flow__edge-interaction {
+  cursor: pointer;
+}
+
+/*
+ * Edge labels must share the connection layer, under cards. A child with a
+ * positive z-index escapes `.react-flow__edgelabel-renderer` (z-index: auto)
+ * and paints over later siblings — so labels sat on top of nodes. Pin the
+ * renderer below `.react-flow__nodes` explicitly.
+ */
+.react-flow__edgelabel-renderer {
+  z-index: 0;
+}
+.react-flow__nodes {
+  z-index: 1;
+}
+
+/*
+ * Promote the diagram to its own compositor layer so overlay backdrop-filter
+ * samples a stable texture. Do not isolate overlay ancestors — that clips
+ * backdrop-filter away from the canvas.
+ */
+.c4-canvas-layer {
+  isolation: isolate;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* RF sets grab whenever the pane is pannable; keep arrow until actually panning. */
+.c4-react-flow {
+  width: 100%;
+  height: 100%;
+}
+.c4-react-flow .react-flow__pane.draggable,
+.c4-react-flow .react-flow__pane.selection {
+  cursor: default;
+}
+.c4-react-flow .react-flow__pane.dragging {
+  cursor: grabbing;
+}
+.c4-react-flow .react-flow__node-groupFrame {
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+/*
+ * Duck spinner (see components/QuackSpinner.tsx).
+ *
+ * These live in the global sheet on purpose. Shipping them in a per-instance
+ * <style> inside the SVG made every mount/unmount insert or drop a stylesheet
+ * that owns the @keyframes, which restarts the animation on every other
+ * spinner on the page — a visible stutter, and doubly so under StrictMode.
+ */
+.qk-ring {
+  animation: qk-spin var(--qk-speed, 1.15s) linear infinite;
+  transform-origin: 50px 50px;
+}
+
+.qk-bob {
+  animation: qk-bob calc(var(--qk-speed, 1.15s) * 0.87) ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 82%;
+}
+
+@keyframes qk-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes qk-bob {
+  0%,
+  100% {
+    transform: translateY(-2.5px) scale(1, 1);
+  }
+  50% {
+    transform: translateY(2px) scale(1.05, 0.94);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qk-ring,
+  .qk-bob {
+    animation: none;
+  }
+}
+
+/*
+ * Level-switch overlay (see components/LevelTransitionOverlay.tsx). Delayed by
+ * the component so a switch that finishes in a frame never shows it; `opacity`
+ * keeps the compositor doing the work, which is what lets it appear at all
+ * while the main thread is busy building the next level.
+ */
+@keyframes qk-level-fade {
+  to {
+    opacity: 1;
+  }
+}
+
+/*
+ * Navbar duck easter egg (see components/NavDuck.tsx). Same reasoning as the
+ * spinner above: one global definition, never re-inserted.
+ */
+.qk-navduck:hover .qk-navduck-hop {
+  animation: qk-hop 0.5s cubic-bezier(0.3, 0.7, 0.4, 1) 3;
+}
+
+@keyframes qk-hop {
+  0% {
+    transform: translateY(0) scale(1, 1);
+  }
+  18% {
+    transform: translateY(1px) scale(1.14, 0.86);
+  }
+  45% {
+    transform: translateY(-7px) scale(0.93, 1.09);
+  }
+  72% {
+    transform: translateY(1px) scale(1.12, 0.88);
+  }
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+}
+
+.qk-bubble {
+  transform: rotate(var(--qk-tilt, 0deg));
+  transform-origin: 14px -6px;
+  animation: qk-pop 0.28s cubic-bezier(0.2, 1.4, 0.5, 1);
+}
+
+/* Title-card bubble: tail underneath, pointing down at the duck. */
+.qk-bubble-below::before {
+  top: auto !important;
+  bottom: -6px;
+  left: 50% !important;
+  margin-left: -4.5px;
+  border-top-width: 0 !important;
+  border-left-width: 0 !important;
+  border-bottom-width: 1.5px;
+  border-right-width: 1.5px;
+}
+
+.qk-bubble-below {
+  transform-origin: 50% calc(100% + 6px);
+}
+
+/* Peek bubble: tail on the right edge, so it grows out towards the duck. */
+.qk-bubble-left {
+  transform-origin: calc(100% + 6px) 50%;
+}
+
+.qk-duck-hop-ride {
+  animation: qk-hop 0.45s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.qk-duck-rubber-hop {
+  animation: qk-rubber-hop 0.58s cubic-bezier(0.34, 1.35, 0.48, 1);
+}
+
+/* Gentle bob while the duck waits on a node (duck-hop easter egg). */
+.qk-duck-idle-perch {
+  animation: qk-hop 1.1s cubic-bezier(0.3, 0.7, 0.4, 1) infinite;
+}
+
+@keyframes qk-rubber-hop {
+  0% {
+    transform: scale(1, 1) translateY(0);
+  }
+  18% {
+    transform: scale(1.18, 0.78) translateY(2px);
+  }
+  42% {
+    transform: scale(0.92, 1.1) translateY(-10px);
+  }
+  62% {
+    transform: scale(1.08, 0.9) translateY(-3px);
+  }
+  78% {
+    transform: scale(0.96, 1.05) translateY(-9px);
+  }
+  100% {
+    transform: scale(1, 1) translateY(0);
+  }
+}
+
+/*
+ * The runaway duck (NavDuck escapade). A paddling wobble while it crosses the
+ * screen — the travel itself is a transform transition on the wrapper, so the
+ * wobble has to live on an inner element to avoid fighting it.
+ */
+.qk-duck-swim {
+  animation: qk-swim 0.62s ease-in-out infinite;
+}
+
+@keyframes qk-swim {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-7deg);
+  }
+  50% {
+    transform: translateY(-2.5px) rotate(7deg);
+  }
+}
+
+@keyframes qk-pop {
+  0% {
+    transform: rotate(var(--qk-tilt, 0deg)) scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: rotate(var(--qk-tilt, 0deg)) scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--qk-tilt, 0deg)) scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qk-navduck:hover .qk-navduck-hop,
+  .qk-bubble,
+  .qk-duck-swim,
+  .qk-duck-hop-ride,
+  .qk-duck-rubber-hop,
+  .qk-duck-idle-perch {
+    animation: none;
+  }
+}
+
+/*
+ * The duck perched on the title card's U: it arrives once the letters have
+ * landed, drops in, and hops twice — the hop itself is the navbar duck's, so
+ * the two read as the same bird.
+ */
+.qk-intro-duck {
+  display: inline-block;
+  animation:
+    qk-intro-duck-in 320ms cubic-bezier(0.2, 1.3, 0.4, 1) both,
+    qk-hop 500ms cubic-bezier(0.3, 0.7, 0.4, 1) 320ms 2 both;
+}
+
+@keyframes qk-intro-duck-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qk-intro-duck {
+    animation: none;
+  }
+}
+
+/*
+ * First-visit title card (see components/LandingIntro.tsx).
+ *
+ * The line drifts right while its letters land in sequence, so the eye is
+ * carried left-to-right across a wordmark that is wider than the window.
+ */
+.qk-intro-sweep {
+  animation-name: qk-intro-drift;
+  animation-timing-function: cubic-bezier(0.22, 0.68, 0.24, 1);
+  animation-fill-mode: both;
+}
+
+.qk-intro-letter {
+  display: inline-block;
+  animation-name: qk-intro-land;
+  animation-timing-function: cubic-bezier(0.16, 0.9, 0.24, 1);
+  animation-fill-mode: both;
+  will-change: transform, opacity, filter;
+}
+
+.qk-intro-byline {
+  animation: qk-intro-byline 520ms ease both;
+}
+
+@keyframes qk-intro-drift {
+  from {
+    /* Scale is written inline from the measurement, so the drift rides on the
+       translate alone — combining them here would fight that. Kept small: the
+       word already fills most of the window and must not leave it. */
+    translate: -5% 0;
+  }
+  to {
+    translate: 1.5% 0;
+  }
+}
+
+@keyframes qk-intro-land {
+  0% {
+    opacity: 0;
+    transform: translateX(-0.42em) skewX(-14deg) scaleY(1.16);
+    filter: blur(14px);
+  }
+  55% {
+    opacity: 1;
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) skewX(0deg) scaleY(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes qk-intro-byline {
+  from {
+    opacity: 0;
+    letter-spacing: 0.7em;
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.42em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qk-intro-sweep,
+  .qk-intro-letter,
+  .qk-intro-byline {
+    animation: none;
+  }
+}
+
+/*
+ * Loading skeletons (components/common/LoadingSkeleton.tsx). One global
+ * definition, like the spinner above: the sweep is a background animation, and
+ * re-inserting it per pane would restart every line on each render.
+ */
+.qk-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--chakra-colors-bg-subtle) 0%,
+    var(--chakra-colors-bg-muted) 45%,
+    var(--chakra-colors-bg-subtle) 90%
+  );
+  background-size: 260% 100%;
+  animation: qk-skeleton-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes qk-skeleton-sweep {
+  0% {
+    background-position: 130% 0;
+  }
+  100% {
+    background-position: -30% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qk-skeleton {
+    animation: none;
+  }
+}
+
+/*
+ * Rubber-band selection.
+ *
+ * React Flow ships a blue rectangle (rgba(0, 89, 220, …)), and blue in this app
+ * means "relationship" — a blue box over the canvas reads as part of the model
+ * for a moment before it reads as a tool. It is also stuck on the light-theme
+ * value, because React Flow stamps its own `light` class on the container, so
+ * its dark defaults never apply. A neutral grey is legible on both boards and
+ * says "transient tool" instead.
+ */
+.react-flow {
+  --xy-selection-background-color: rgba(126, 138, 158, 0.16);
+  --xy-selection-border: 1px dashed rgba(126, 138, 158, 0.85);
+  /* Resize handles come from the same blue family — keep them neutral too. */
+  --xy-resize-background-color: rgba(126, 138, 158, 0.9);
+}

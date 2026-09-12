@@ -1,0 +1,44 @@
+[
+  {
+    "id": "stripe",
+    "name": "Stripe",
+    "color": "#635bff",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "twilio",
+    "name": "Twilio",
+    "color": "#f22f46",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "sendgrid",
+    "name": "SendGrid",
+    "color": "#00b3e3",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "shopify",
+    "name": "Shopify",
+    "color": "#96bf48",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "algolia",
+    "name": "Algolia",
+    "color": "#5468ff",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "cloudflare",
+    "name": "Cloudflare",
+    "color": "#f38020",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "mailchimp",
+    "name": "Mailchimp",
+    "color": "#ffe01b",
+    "levels": ["system", "container"]
+  }
+]

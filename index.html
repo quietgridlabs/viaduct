@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/ico_app-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#FC6D26" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Viaduct" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Viaduct Community — Local C4 Model Editor</title>
+    <meta
+      name="description"
+      content="Viaduct Community is a local C4 modeling editor: system, container, component and code diagrams, Magic flows, docs, sequence diagrams, OpenAPI contracts, and JSON import/export — all in the browser."
+    />
+    <meta
+      name="keywords"
+      content="C4 model, C4 diagram, C4 architecture, software architecture diagram, Viaduct, system context diagram, container diagram, component diagram, architecture modeling, Quiet Grid Labs, PlantUML C4, Magic flows, OpenAPI"
+    />
+    <meta name="author" content="Quiet Grid Labs" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://github.com/quietgridlabs/viaduct" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Viaduct" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://github.com/quietgridlabs/viaduct" />
+    <meta property="og:title" content="Viaduct Community — Local C4 Model Editor" />
+    <meta
+      property="og:description"
+      content="Local C4 modeling in the browser: diagrams, Magic flows, docs, sequences, OpenAPI, and JSON import/export. No account required."
+    />
+    <meta property="og:image" content="https://c4.quietgridlabs.com/og-cover.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Viaduct — a C4 container diagram with technology-coloured services"
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@quietgridlabs" />
+    <meta name="twitter:title" content="Viaduct Community — Local C4 Model Editor" />
+    <meta
+      name="twitter:description"
+      content="Local C4 modeling in the browser: diagrams, Magic flows, docs, sequences, OpenAPI, and JSON import/export."
+    />
+    <meta name="twitter:image" content="https://c4.quietgridlabs.com/og-cover.png" />
+    <meta
+      name="twitter:image:alt"
+      content="Viaduct — a C4 container diagram with technology-coloured services"
+    />
+    <meta property="og:image:type" content="image/png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://github.com/quietgridlabs/viaduct#organization",
+            "name": "Quiet Grid Labs",
+            "url": "https://quietgridlabs.com/",
+            "email": "support@quietgridlabs.com"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://github.com/quietgridlabs/viaduct#website",
+            "url": "https://github.com/quietgridlabs/viaduct",
+            "name": "Viaduct Community",
+            "description": "Local C4 modeling editor for software architects — diagrams, Magic flows, docs and contracts in the browser.",
+            "publisher": { "@id": "https://github.com/quietgridlabs/viaduct#organization" },
+            "inLanguage": "en"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://github.com/quietgridlabs/viaduct#app",
+            "name": "Viaduct Community",
+            "applicationCategory": "DeveloperApplication",
+            "applicationSubCategory": "Software architecture modeling",
+            "operatingSystem": "Web",
+            "keywords": "C4 model, software architecture documentation, Magic flows, OpenAPI, PlantUML",
+            "url": "https://github.com/quietgridlabs/viaduct",
+            "description": "Local C4 modeling editor. Create system context, container, component, and code diagrams with Magic flows, docs, sequences and OpenAPI contracts.",
+            "author": { "@id": "https://github.com/quietgridlabs/viaduct#organization" },
+            "isAccessibleForFree": true,
+            "featureList": [
+              "C4 model diagrams",
+              "System, container, component and code levels",
+              "Magic flows",
+              "Markdown docs and PlantUML sequences",
+              "OpenAPI contracts",
+              "JSON import and export",
+              "Local browser persistence"
+            ]
+          }
+        ]
+      }
+    </script>
+
+    <!-- IBM Plex Sans is the UI font (see src/theme/chakra-system.ts); JetBrains
+         Mono is used for code. Linked here so they are discovered in the initial
+         HTML instead of after the bundled CSS.
+
+         Served from this origin rather than from Google: the stylesheet that
+         used to sit here had every visitor's browser announce itself to
+         fonts.googleapis.com and fonts.gstatic.com before a single pixel was
+         drawn. Both families are still variable and still subset by
+         unicode-range, so a Latin reader downloads neither the Cyrillic nor
+         the Greek cut. See public/fonts.css. -->
+    <link rel="preload" as="style" href="/fonts.css" />
+    <link rel="stylesheet" href="/fonts.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      /*
+       * Every route without a file of its own is served the prerendered landing
+       * document. On an app route that markup is wrong twice over: it is the
+       * landing, and it paints unstyled, because Emotion keeps its rules in the
+       * CSSOM and only the class names survive into static HTML. Drop it here,
+       * while the parser is still working, so the editor never flashes a stray
+       * landing page before its own shell appears.
+       *
+       * The route list is injected at build time from scripts/publicRoutes.mjs.
+       */
+      (function () {
+        var prerendered = __PRERENDERED_ROUTES__;
+        var path = location.pathname.replace(/\/+$/, '') || '/';
+        if (prerendered.indexOf(path) !== -1) return;
+        document.documentElement.removeAttribute('data-page-scroll');
+        var root = document.getElementById('root');
+        if (root) root.textContent = '';
+      })();
+    </script>
+    <noscript>
+      <main style="max-width: 48rem; margin: 3rem auto; font-family: system-ui, sans-serif; line-height: 1.6; padding: 0 1.5rem; color: #1a1a1a">
+        <header style="margin-bottom: 2.5rem">
+          <strong style="font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: #e24329">C4 Modeling Tool</strong>
+          <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin: 0.5rem 0 1rem">
+            Viaduct Community — local C4 modeling
+          </h1>
+          <p style="font-size: 1.1rem; color: #555; max-width: 38rem">
+            Draw system context, container, component, and code diagrams in the browser.
+            Magic flows, docs, sequences, OpenAPI contracts, and JSON import/export — no account required.
+          </p>
+        </header>
+
+        <nav style="display: flex; gap: 1.5rem; flex-wrap: wrap; border-top: 1px solid #e5e5e5; padding-top: 1.5rem; margin-top: 2rem">
+          <a href="/editor" style="font-weight: 600; color: #e24329">Open the editor</a>
+          <a href="/docs" style="color: #555">Documentation</a>
+          <a href="mailto:support@quietgridlabs.com" style="color: #555">Support</a>
+        </nav>
+      </main>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

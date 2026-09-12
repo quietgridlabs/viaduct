@@ -1,0 +1,80 @@
+[
+  {
+    "id": "nginx",
+    "name": "Nginx",
+    "color": "#009639",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "apache",
+    "name": "Apache HTTP Server",
+    "color": "#d22128",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "traefik",
+    "name": "Traefik",
+    "color": "#24a1c1",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "envoy",
+    "name": "Envoy",
+    "color": "#e6522c",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "kong",
+    "name": "Kong Gateway",
+    "color": "#003459",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "haproxy",
+    "name": "HAProxy",
+    "color": "#1e54a0",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "caddy",
+    "name": "Caddy",
+    "color": "#1f8782",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "istio",
+    "name": "Istio",
+    "color": "#466bb0",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "linkerd",
+    "name": "Linkerd",
+    "color": "#2bed6e",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "consul",
+    "name": "Consul",
+    "color": "#dc477d",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "aws-api-gateway",
+    "name": "AWS API Gateway",
+    "color": "#ff4f8b",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "azure-apim",
+    "name": "Azure API Management",
+    "color": "#0078d4",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "apigee",
+    "name": "Apigee",
+    "color": "#4285f4",
+    "levels": ["system", "container"]
+  }
+]

@@ -1,0 +1,12 @@
+Viaduct Community
+Copyright 2026 Quiet Grid Labs
+
+This product is licensed under the Business Source License 1.1 (BUSL-1.1).
+See the LICENSE file for the full text and Additional Use Grant.
+
+Viaduct Cloud (collaboration, hosted MCP, change sets, cross-project domains,
+and related multi-tenant services) is a separate commercial product and is not
+included in this repository.
+
+Third-party software included in this distribution remains under its own
+licenses. See package.json and the respective package notices.

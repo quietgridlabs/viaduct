@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Loading">
+  <style>
+    .ring { animation: qspin 1.15s linear infinite; transform-origin: 50px 50px }
+    .bob { animation: qbob 1s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 82% }
+    @keyframes qspin { to { transform: rotate(360deg) } }
+    @keyframes qbob {
+      0%, 100% { transform: translateY(-2.5px) scale(1, 1) }
+      50%      { transform: translateY(2px) scale(1.05, 0.94) }
+    }
+    @media (prefers-reduced-motion: reduce) { .ring, .bob { animation: none } }
+  </style>
+  <circle cx="50" cy="50" r="42" fill="none" stroke="#E8EEF5" stroke-opacity="0.14" stroke-width="7"/>
+  <circle class="ring" cx="50" cy="50" r="42" fill="none" stroke="#FC6D26" stroke-width="7" stroke-linecap="round" stroke-dasharray="66 198"/>
+  <g class="bob">
+    <g transform="translate(17.8 20.9) scale(0.62)">
+      <g fill="#E8EEF5">
+        <path d="M19 48 C13 47 9 45 5 43 C7 51 10 58 15 65 Z"/>
+        <path d="M12 62C12 48 26 41 46 43C64 45 79 52 79 64C79 74 68 82 46 82C24 82 12 74 12 62Z"/>
+        <circle cx="62" cy="33" r="21"/>
+      </g>
+      <path d="M74 31 C86 29 99 32 99 37 C99 42 86 45 74 45 Z" fill="#FC6D26"/>
+      <path d="M28 55C35 49 49 49 56 57C50 66 35 68 29 62Z" fill="#FC6D26"/>
+      <circle cx="67" cy="27" r="5.6" fill="#FFFFFF"/>
+      <circle cx="68" cy="27.5" r="2.9" fill="#121926"/>
+    </g>
+  </g>
+</svg>

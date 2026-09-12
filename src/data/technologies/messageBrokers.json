@@ -1,0 +1,38 @@
+[
+  {
+    "id": "kafka",
+    "name": "Apache Kafka",
+    "color": "#f3f3f3",
+    "levels": ["system", "container", "connection"]
+  },
+  {
+    "id": "rabbitmq",
+    "name": "RabbitMQ",
+    "color": "#ff6600",
+    "levels": ["system", "container", "connection"]
+  },
+  {
+    "id": "amazonsqs",
+    "name": "Amazon SQS",
+    "color": "#ff9900",
+    "levels": ["system", "container", "connection"]
+  },
+  {
+    "id": "redisstreams",
+    "name": "Redis Streams",
+    "color": "#dc382d",
+    "levels": ["system", "container", "connection"]
+  },
+  {
+    "id": "nats",
+    "name": "NATS",
+    "color": "#007acc",
+    "levels": ["system", "container", "connection"]
+  },
+  {
+    "id": "mqtt",
+    "name": "MQTT",
+    "color": "#ff6600",
+    "levels": ["system", "container", "connection"]
+  }
+]

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API Reference — Viaduct</title>
+    <meta name="description" content="The Viaduct REST API: read and write C4 models, documentation, contracts and change sets over /api/v1." />
+    <!--
+      A plain page, outside the application bundle on purpose: the reference is
+      read by people evaluating an integration, and it should not cost the
+      editor a byte. Both the viewer and the typefaces are served from this
+      origin — see public/fonts.css and scripts/vendorRedoc.mjs — so opening it
+      tells nobody but us.
+    -->
+    <!--
+      Redoc's "API docs by Redocly" badge pulls a logo from cdn.redoc.ly, which
+      would make this the one page on the site that tells a third party who is
+      reading it. The policy below refuses the request outright rather than
+      hiding the image after it has been made; everything the viewer genuinely
+      needs is served from here. `unsafe-inline`/`unsafe-eval` are Redoc's own
+      requirements — it styles through injected CSS and compiles templates.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; worker-src 'self' blob:; font-src 'self'; connect-src 'self'"
+    />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/fonts.css" />
+    <style>
+      body {
+        margin: 0;
+        font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.14);
+        font-size: 14px;
+      }
+      .bar a {
+        color: #c47c00;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .bar a:hover { text-decoration: underline; }
+      .bar .spacer { flex: 1; }
+      .bar code {
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        color: #57606a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar">
+      <a href="/">← Viaduct</a>
+      <span class="spacer"></span>
+      <code>/api/v1</code>
+      <a href="/api/v1/openapi.json">openapi.json</a>
+      <a href="/docs#rest-api">Guide</a>
+    </div>
+    <redoc
+      spec-url="/api/v1/openapi.json"
+      hide-download-button
+      theme='{"typography":{"fontFamily":"IBM Plex Sans, sans-serif","headings":{"fontFamily":"IBM Plex Sans, sans-serif","fontWeight":"700"},"code":{"fontFamily":"JetBrains Mono, ui-monospace, monospace"}},"colors":{"primary":{"main":"#c47c00"}},"sidebar":{"width":"260px"}}'
+    ></redoc>
+    <script src="/vendor/redoc.standalone.js"></script>
+  </body>
+</html>

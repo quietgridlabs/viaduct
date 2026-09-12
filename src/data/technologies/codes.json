@@ -1,0 +1,38 @@
+[
+  {
+    "id": "github",
+    "name": "GitHub",
+    "color": "#f3f3f3",
+    "levels": ["container", "connection"]
+  },
+  {
+    "id": "gitlab",
+    "name": "GitLab",
+    "color": "#fc6d26",
+    "levels": ["container", "connection"]
+  },
+  {
+    "id": "bitbucket",
+    "name": "Bitbucket",
+    "color": "#0052cc",
+    "levels": ["container", "connection"]
+  },
+  {
+    "id": "azuredevops",
+    "name": "Azure DevOps",
+    "color": "#0078d7",
+    "levels": ["container", "connection"]
+  },
+  {
+    "id": "sourceforge",
+    "name": "SourceForge",
+    "color": "#f3f3f3",
+    "levels": ["container", "connection"]
+  },
+  {
+    "id": "gitea",
+    "name": "Gitea",
+    "color": "#609926",
+    "levels": ["container", "connection"]
+  }
+]

@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Allow: /docs
+Allow: /editor
+
+# Local workspace surfaces — noindex in meta; keep crawlers out of SPA shells.
+Disallow: /catalog
+Disallow: /flows
+
+Sitemap: https://github.com/quietgridlabs/viaduct

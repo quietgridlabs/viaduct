@@ -1,0 +1,44 @@
+[
+  {
+    "id": "prometheus",
+    "name": "Prometheus",
+    "color": "#e6522c",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "grafana",
+    "name": "Grafana",
+    "color": "#f46800",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "newrelic",
+    "name": "New Relic",
+    "color": "#008c99",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "splunk",
+    "name": "Splunk",
+    "color": "#f3f3f3",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "opentelemetry",
+    "name": "OpenTelemetry",
+    "color": "#673ab7",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "jaeger",
+    "name": "Jaeger",
+    "color": "#0098a5",
+    "levels": ["system", "container"]
+  },
+  {
+    "id": "zipkin",
+    "name": "Zipkin",
+    "color": "#f47e00",
+    "levels": ["system", "container"]
+  }
+]

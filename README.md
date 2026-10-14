@@ -2,6 +2,7 @@
 
 [![License: BUSL-1.1](https://img.shields.io/badge/license-BUSL--1.1-blue.svg)](./LICENSE)
 [![Node.js >=22](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](https://nodejs.org/)
+[![GHCR](https://img.shields.io/badge/ghcr.io-quietgridlabs%2Fviaduct-blue?logo=docker)](https://github.com/quietgridlabs/viaduct/pkgs/container/viaduct)
 
 **Viaduct** by [Quiet Grid Labs](https://quietgridlabs.com) — design, explore, and document architecture with the [C4 model](https://c4model.com/), Magic flows, docs, and contracts. Runs locally in the browser. No account.
 
@@ -9,9 +10,29 @@ Hosted team product (collab, MCP, change sets): **[Viaduct Cloud](https://c4.qui
 
 > Not a fork of `archivisio/c4_modelizer`. This is the Quiet Grid Labs Community edition.
 
----
+## Demo
+
+[![Viaduct: C4 Architecture Modeling for Teams and AI Coding Agents](https://img.youtube.com/vi/EfKfy6dYpwg/maxresdefault.jpg)](https://www.youtube.com/watch?v=EfKfy6dYpwg)
+
+Watch on YouTube: [Viaduct: C4 Architecture Modeling for Teams and AI Coding Agents](https://www.youtube.com/watch?v=EfKfy6dYpwg)
 
 ## Quick start
+
+### Docker (one command)
+
+```bash
+docker run --rm -p 8080:80 ghcr.io/quietgridlabs/viaduct:latest
+```
+
+Open http://localhost:8080
+
+Or with Compose (builds locally if the image is missing):
+
+```bash
+docker compose up
+```
+
+### From source
 
 ```bash
 npm install
@@ -19,14 +40,6 @@ npm run dev
 ```
 
 Open http://localhost:5173/editor
-
-Or with Docker:
-
-```bash
-docker compose up --build
-```
-
-Then open http://localhost:8080
 
 ## What you get
 
@@ -67,4 +80,4 @@ You may use this for production **except** offering a competing hosted multi-ten
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md). Issues and discussions welcome once the GitHub repo is public.
+See [CONTRIBUTING.md](./CONTRIBUTING.md).

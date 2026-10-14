@@ -1,5 +1,6 @@
 services:
   viaduct:
+    image: ghcr.io/quietgridlabs/viaduct:latest
     build: .
     ports:
       - "8080:80"

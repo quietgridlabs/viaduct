@@ -178,14 +178,14 @@ export function useDiagramClipboard({
     const onKeyDown = (event: KeyboardEvent) => {
       if (isEditableKeyboardTarget(event.target)) return;
       const mod = event.metaKey || event.ctrlKey;
-      if (!mod) return;
+      if (!mod || event.altKey || event.shiftKey) return;
 
-      const key = event.key.toLowerCase();
-      if (key === 'c') {
+      /* Physical key — `event.key` is layout-dependent (KeyC → «с» on RU). */
+      if (event.code === 'KeyC') {
         if (copy()) {
           event.preventDefault();
         }
-      } else if (key === 'v') {
+      } else if (event.code === 'KeyV') {
         event.preventDefault();
         void paste();
       }

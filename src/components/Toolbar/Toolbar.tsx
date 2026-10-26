@@ -10,10 +10,14 @@ import {
   CANVAS_CHROME_Z,
   workspaceChromeRowCss,
 } from '@theme/sidePanelLayout';
-import { Moon, BookOpen, Settings, Sun } from 'lucide-react';
+import { Moon, BookOpen, Keyboard, Settings, Sun } from 'lucide-react';
 import { Box, HStack } from '@chakra-ui/react';
 import NavDuck from '@components/NavDuck';
 import SettingsDialog from '@components/settings';
+import {
+  CanvasShortcutsModal,
+  openCanvasShortcuts,
+} from '@features/canvas-shortcuts';
 import { leaveWorkspaceOverlays } from '@/navigation/leaveWorkspaceOverlays';
 import PortalTarget from '@slots/PortalTarget';
 import { memo, useState } from 'react';
@@ -97,6 +101,15 @@ const Toolbar = memo(
                 <PortalTarget id="toolbar-actions-before" />
 
                 <ToolbarIconButton
+                  data-testid="toolbar-shortcuts"
+                  onClick={openCanvasShortcuts}
+                  aria-label={t('shortcuts_open')}
+                  title={t('shortcuts_open')}
+                >
+                  <Keyboard size={TOOLBAR_ICON_SIZE} />
+                </ToolbarIconButton>
+
+                <ToolbarIconButton
                   data-testid="toolbar-docs"
                   data-tour="help"
                   onClick={() => {
@@ -176,6 +189,10 @@ const Toolbar = memo(
         ) : null}
 
         <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+        <CanvasShortcutsModal
+          canEdit={!viewOnly && !readOnly}
+          canGraph={onCanvas && !hideTools}
+        />
       </>
     );
   }

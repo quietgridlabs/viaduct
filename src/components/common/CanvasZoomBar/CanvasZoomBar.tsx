@@ -1,18 +1,83 @@
 import { ToolbarIconButton, TOOLBAR_ICON_SIZE } from '@components/common/ToolbarIconButton';
+import { trackProductEvent } from '@/metrics';
+import { arrangeCurrentView } from '@utils/arrangeCurrentView';
+import { setArrangeUndo } from '@/state/arrangeUndo';
 import { useGlassSurface } from '@theme/glassSurfaces';
 import { HStack, Slider } from '@chakra-ui/react';
 import { useReactFlow, useStore } from '@xyflow/react';
-import { Maximize2 } from 'lucide-react';
+import { LayoutGrid, Maximize2, Waypoints } from 'lucide-react';
+import { useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  isServiceGraphActive,
+  isServiceGraphBuilding,
+  subscribeServiceGraph,
+  toggleServiceGraph,
+} from '@/state/serviceGraph';
 
-/** Zoom chrome — slider + fit, same icon language as ToolsRail. */
-export default function CanvasZoomBar() {
+type Props = {
+  /**
+   * Only when the person may edit this diagram. A viewer or a canvas locked
+   * under a panel must not offer Arrange — moves would either bounce or
+   * rewrite something they cannot save.
+   */
+  canArrange?: boolean;
+  /** After positions land, let the owner of the model know. */
+  onArranged?: () => void;
+  /**
+   * Offer the service-graph toggle. Only the project canvas has levels to
+   * flatten — the sequence editor and the embedded diagram share this bar and
+   * have no model behind them to graph.
+   */
+  canGraph?: boolean;
+};
+
+/** Zoom chrome — slider + fit (+ graph and arrange when there is a model), same icon language as ToolsRail. */
+export default function CanvasZoomBar({
+  canArrange = false,
+  onArranged,
+  canGraph = false,
+}: Props) {
   const { t } = useTranslation();
   const glass = useGlassSurface();
   const { zoomTo, fitView } = useReactFlow();
   const zoom = useStore((s) => s.transform[2]);
   const minZoom = useStore((s) => s.minZoom);
   const maxZoom = useStore((s) => s.maxZoom);
+  const graphBuilding = useSyncExternalStore(
+    subscribeServiceGraph,
+    isServiceGraphBuilding,
+    () => false
+  );
+  const graphActive = useSyncExternalStore(
+    subscribeServiceGraph,
+    isServiceGraphActive,
+    /* The graph never survives a reload, so the server render is always the
+       diagram — see state/serviceGraph.ts. */
+    () => false
+  );
+
+  const handleArrange = () => {
+    const outcome = arrangeCurrentView();
+    trackProductEvent('editor.arrange', { moved: outcome?.moved ?? 0 });
+    if (outcome) {
+      /* Held until the person says keep or undo. Arranging rewrites the whole
+         view at once and nothing else in the editor can be taken back, so the
+         one place that does needs its previous state kept somewhere the bar
+         above the canvas can reach. */
+      setArrangeUndo({
+        moved: outcome.moved,
+        viewKey: outcome.viewKey,
+        revert: () => {
+          outcome.revert();
+          onArranged?.();
+          void fitView({ padding: 0.2, duration: 380 });
+        },
+      });
+    }
+    onArranged?.();
+    void fitView({ padding: 0.2, duration: 380 });
+  };
 
   return (
     <HStack
@@ -53,6 +118,37 @@ export default function CanvasZoomBar() {
           />
         </Slider.Control>
       </Slider.Root>
+      {canGraph ? (
+        <ToolbarIconButton
+          title={graphActive ? t('service_graph_exit') : t('service_graph')}
+          aria-label={graphActive ? t('service_graph_exit') : t('service_graph')}
+          active={graphActive}
+          /* The wait belongs on the thing that was pressed. Framing the graph
+             is no longer this button's job either: the layout is asynchronous,
+             so whoever finishes building it frames it (EditorCanvasGraph). */
+          loading={graphBuilding}
+          onClick={() => {
+            const next = toggleServiceGraph();
+            trackProductEvent('editor.service_graph', { active: next });
+          }}
+          data-testid="canvas-service-graph"
+        >
+          <Waypoints size={TOOLBAR_ICON_SIZE} />
+        </ToolbarIconButton>
+      ) : null}
+      {/* Arrange is about the diagram's own positions. The graph's are
+          computed, and arranging here would quietly rewrite the level view
+          nobody is looking at. */}
+      {canArrange && !graphActive ? (
+        <ToolbarIconButton
+          title={t('arrange_diagram')}
+          aria-label={t('arrange_diagram')}
+          onClick={handleArrange}
+          data-testid="canvas-arrange"
+        >
+          <LayoutGrid size={TOOLBAR_ICON_SIZE} />
+        </ToolbarIconButton>
+      ) : null}
       <ToolbarIconButton
         title={t('fit_view')}
         aria-label={t('fit_view')}

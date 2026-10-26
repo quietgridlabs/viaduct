@@ -7,11 +7,20 @@ import { useTranslation } from 'react-i18next';
 export type GroupFrameData = {
   label: string;
   memberCount?: number;
+  /**
+   * What the frame is, printed small under it. Defaults to "Group", which is
+   * what a frame is on the level diagram — there it gathers elements sharing
+   * a group tag. The service graph draws one round a system instead, and
+   * calling that a group would tell the reader something untrue; it passes an
+   * empty string, and nothing is printed.
+   */
+  caption?: string;
 };
 
 function GroupFrameNode({ data }: NodeProps<Node<GroupFrameData>>) {
   const { mode, chrome } = useColorMode();
   const { t } = useTranslation();
+  const caption = data.caption ?? t('group');
   const light = mode === 'light';
 
   return (
@@ -26,7 +35,12 @@ function GroupFrameNode({ data }: NodeProps<Node<GroupFrameData>>) {
       pointerEvents="none"
       position="relative"
     >
+      {/* The title is the one grabbable part (the frame's dragHandle): dragging
+          it moves every card in the group. The body stays canvas. */}
       <Text
+        className="group-frame-handle"
+        pointerEvents="auto"
+        cursor="grab"
         position="absolute"
         top="10px"
         left="14px"
@@ -39,18 +53,20 @@ function GroupFrameNode({ data }: NodeProps<Node<GroupFrameData>>) {
       >
         {data.label}
       </Text>
-      <Text
-        position="absolute"
-        bottom="8px"
-        left="0"
-        right="0"
-        textAlign="center"
-        fontSize="11px"
-        color={chrome.nodeTextMuted}
-        pointerEvents="none"
-      >
-        {t('group')}
-      </Text>
+      {caption ? (
+        <Text
+          position="absolute"
+          bottom="8px"
+          left="0"
+          right="0"
+          textAlign="center"
+          fontSize="11px"
+          color={chrome.nodeTextMuted}
+          pointerEvents="none"
+        >
+          {caption}
+        </Text>
+      ) : null}
     </Box>
   );
 }

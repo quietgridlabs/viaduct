@@ -82,3 +82,30 @@ describe('reuseRfEdges', () => {
     expect(out[0].data).toEqual({ bidirectional: true });
   });
 });
+
+describe('reuseRfEdges and handles', () => {
+  const edge = (over: Partial<Edge> = {}): Edge => ({
+    id: 'a->b',
+    source: 'a',
+    target: 'b',
+    sourceHandle: 'source-right-0',
+    targetHandle: 'target-left-0',
+    ...over,
+  });
+
+  it('gives back a new object when only the anchors moved', () => {
+    /* Arranging rewrites nothing but the handles, so if this reuses the old
+       object the canvas keeps drawing the line off the old face. */
+    const prev = [edge()];
+    const next = [edge({ sourceHandle: 'source-left-2', targetHandle: 'target-right-3' })];
+    const out = reuseRfEdges(prev, next);
+    expect(out[0]).toBe(next[0]);
+    expect(out[0].sourceHandle).toBe('source-left-2');
+  });
+
+  it('still reuses an edge that did not change at all', () => {
+    const prev = [edge()];
+    const out = reuseRfEdges(prev, [edge()]);
+    expect(out[0]).toBe(prev[0]);
+  });
+});

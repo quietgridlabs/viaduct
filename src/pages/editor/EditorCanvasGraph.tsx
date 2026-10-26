@@ -36,7 +36,20 @@ import {
   flowMotionForEdge,
   isNeighborhoodEdge,
   resolveNeighborhood,
+  resolveNeighborhoodIn,
 } from '@utils/neighborhoodHighlight';
+import { buildServiceGraph, type ServiceGraph } from '@utils/buildServiceGraph';
+import {
+  fitFlowView,
+  getFlowViewport,
+  setFlowViewport,
+  type FlowViewport,
+} from '@utils/flowViewport';
+import {
+  isServiceGraphActive,
+  setServiceGraphBuilding,
+  subscribeServiceGraph,
+} from '@/state/serviceGraph';
 import { reuseRfEdges, reuseRfNodes } from '@utils/reuseGraphItems';
 import { findComponentConnection, fkEdgeLabel, getTableColumns } from '@utils/schemaModel';
 import { closeFloatingSidePanels } from '@/navigation/closeFloatingSidePanels';
@@ -46,8 +59,10 @@ import type { Edge, Node } from '@xyflow/react';
 import {
   memo,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
+  useState,
   useSyncExternalStore,
 } from 'react';
 import {
@@ -137,10 +152,177 @@ function EditorCanvasGraph({
   const duckHopActive = duckHop.phase !== 'idle';
   const overlayCoversCanvas = useWorkspaceOverlayCoversCanvas();
   const interactionLocked = viewOnly || duckHopActive || overlayCoversCanvas;
+
+  /*
+   * The service graph replaces the level diagram wholesale: one orb per system
+   * or container, one line per connection drawn between them. It is swapped in
+   * at the very end, over `displayNodes` / `displayEdges`, so everything the
+   * level view computes on the way down — trace, schema mode, neighbourhood,
+   * ghosts — is simply not asked for while it is up.
+   */
+  const serviceGraphActive = useSyncExternalStore(
+    subscribeServiceGraph,
+    isServiceGraphActive,
+    () => false
+  );
+  /*
+   * Built off to one side, because the layout is asynchronous.
+   *
+   * ELK does the placing (see layoutServiceGraph: the model is a compound
+   * digraph, and laying one out means layered drawing that respects
+   * containment), and it is both a promise and a 1.5MB import fetched the
+   * first time the graph is opened. So the canvas keeps showing the level
+   * diagram until the answer arrives rather than blanking in the meantime.
+   *
+   * `token` is what keeps a slow build from landing after a newer one: each
+   * run claims the latest number and only writes if it still holds it, so
+   * toggling the graph or editing the model mid-layout cannot leave the
+   * previous answer on screen.
+   */
+  const [serviceGraph, setServiceGraph] = useState<ServiceGraph | null>(null);
+  const graphToken = useRef(0);
+  /*
+   * The diagram's own viewport, held for as long as the graph covers it.
+   *
+   * The two pictures have nothing to do with each other's coordinates, so
+   * whichever one arrives has to say where to look. The graph gets framed;
+   * the diagram gets put back exactly where it was, which is better than
+   * framing it too — somebody who was reading one corner of a large model is
+   * returned to that corner rather than to the whole of it.
+   */
+  const diagramViewport = useRef<FlowViewport | null>(null);
+  const graphWasOpen = useRef(false);
+  const fitOnArrival = useRef(false);
+  useEffect(() => {
+    const token = ++graphToken.current;
+    if (!serviceGraphActive) {
+      setServiceGraph(null);
+      setServiceGraphBuilding(false);
+      /* Only on the way back, never on an ordinary edit: this effect also
+         runs whenever the model changes, and re-aiming the canvas under
+         somebody who is editing it would be its own bug. */
+      if (graphWasOpen.current) {
+        graphWasOpen.current = false;
+        fitOnArrival.current = false;
+        const saved = diagramViewport.current;
+        diagramViewport.current = null;
+        requestAnimationFrame(() => {
+          if (saved) setFlowViewport(saved);
+          else fitFlowView();
+        });
+      }
+      return;
+    }
+    if (!graphWasOpen.current) {
+      graphWasOpen.current = true;
+      diagramViewport.current = getFlowViewport();
+      /* Frame the graph when it opens, and only then. This effect also runs
+         on every model change, and re-framing under somebody who has panned
+         the graph and is now editing would throw their place away. */
+      fitOnArrival.current = true;
+    }
+    setServiceGraphBuilding(true);
+    void buildServiceGraph(model)
+      .then((built) => {
+        if (graphToken.current !== token) return;
+        setServiceGraph(built);
+        setServiceGraphBuilding(false);
+        /*
+         * Frame it once it exists. Its coordinates come from ELK and have
+         * nothing to do with where the diagram was, so without this the graph
+         * is drawn somewhere off the side of the canvas and has to be hunted
+         * for. The frame has to wait for the nodes to mount, hence the frame
+         * after this one.
+         */
+        if (fitOnArrival.current) {
+          fitOnArrival.current = false;
+          requestAnimationFrame(() => fitFlowView());
+        }
+      })
+      .catch(() => {
+        /* A layout that cannot be computed leaves the diagram alone rather
+           than an empty canvas with no way back. */
+        if (graphToken.current !== token) return;
+        setServiceGraph(null);
+        setServiceGraphBuilding(false);
+      });
+  }, [serviceGraphActive, model]);
   const duckFocusId =
     duckHopActive && duckHop.currentNodeId ? duckHop.currentNodeId : null;
   const effectiveFocusNodeId = duckFocusId ?? focusNodeId;
   const effectiveHighlightNodeId = duckFocusId ?? highlightNodeId;
+
+  /*
+   * Where the graph has been dragged to, for this sitting only.
+   *
+   * The graph's positions come from ELK, and a drag must not reach the model
+   * — it would move cards on a level diagram nobody is looking at. But it has
+   * to reach something: React Flow asks the owner of the nodes for the new
+   * position, and when the answer is "nothing happened" the orb springs back,
+   * the frame drawn round it never follows, and a service dragged out of its
+   * system simply returns. Held here instead, and dropped when the graph
+   * closes: a rearranged graph is a way of looking at the model for a moment,
+   * not a thing to save.
+   */
+  const [graphMoves, setGraphMoves] = useState<Record<string, { x: number; y: number }>>({});
+  useEffect(() => {
+    if (!serviceGraphActive) setGraphMoves({});
+  }, [serviceGraphActive]);
+  const handleGraphMove = useCallback((id: string, position: { x: number; y: number }) => {
+    setGraphMoves((moves) => ({ ...moves, [id]: position }));
+  }, []);
+
+  /*
+   * "Highlight connections" over the graph.
+   *
+   * The menu item does one thing — it names a focus element — and the level
+   * view answers by lighting that element's hop and dimming the rest. The
+   * graph is a different picture of the same model, so it owes the same
+   * answer; it just has to work it out over its own pool, since a system and
+   * a container are neighbours here and are never on one level.
+   *
+   * Written against the already-built graph rather than folded into
+   * `buildServiceGraph`, so changing the focus re-tints what is on screen
+   * instead of laying the whole thing out again.
+   */
+  const serviceGraphView = useMemo(() => {
+    if (!serviceGraph) return null;
+
+    const moved =
+      Object.keys(graphMoves).length === 0
+        ? serviceGraph
+        : {
+            ...serviceGraph,
+            nodes: serviceGraph.nodes.map((node) =>
+              graphMoves[node.id] ? { ...node, position: graphMoves[node.id] } : node
+            ),
+          };
+
+    if (!effectiveFocusNodeId) return moved;
+
+    const hop = resolveNeighborhoodIn(moved.services, effectiveFocusNodeId);
+    if (!hop.nodeIds.size) return moved;
+
+    return {
+      ...moved,
+      nodes: moved.nodes.map((node) => {
+        const hit = hop.nodeIds.has(node.id);
+        return { ...node, data: { ...node.data, traceHighlight: hit, traceDimmed: !hit } };
+      }),
+      edges: moved.edges.map((edge) => {
+        const hit = hop.edgeIds.has(`${edge.source}->${edge.target}`)
+          || hop.edgeIds.has(`${edge.target}->${edge.source}`);
+        /* The same two numbers the level view uses for a dimmed and a lit
+           connection — a highlight should not read differently depending on
+           which picture you are looking at. */
+        return {
+          ...edge,
+          style: { ...edge.style, opacity: hit ? 1 : 0.18, strokeWidth: hit ? 2.5 : 1 },
+          data: { ...edge.data, traceHighlight: hit, traceDimmed: !hit },
+        };
+      }),
+    };
+  }, [serviceGraph, effectiveFocusNodeId, graphMoves]);
 
   const nodesRef = useRef<Node[]>([]);
   const edgesRef = useRef<Edge[]>([]);
@@ -480,14 +662,29 @@ function EditorCanvasGraph({
       <FlowCanvas
         bottomRight={<LevelHelper level={helperLevel} />}
         bottomLeft={bottomLeft}
-        nodes={displayNodes}
-        edges={displayEdges}
-        onConnect={interactionLocked ? noopConnect : onConnectTracked}
+        nodes={serviceGraphView ? serviceGraphView.nodes : displayNodes}
+        edges={serviceGraphView ? serviceGraphView.edges : displayEdges}
+        /* Nothing in the graph writes back. Its positions are computed, so a
+           drag that persisted would move cards on a level diagram the person
+           is not looking at, and a connection drawn here has no level to
+           belong to. */
+        onConnect={interactionLocked || serviceGraph ? noopConnect : onConnectTracked}
+        /* A drag in the graph goes to the sitting, not to the model — see
+           `graphMoves`. Without it the frames cannot follow. */
         onNodePositionChange={
-          interactionLocked ? noopPositionChange : handleNodePositionChange
+          interactionLocked
+            ? noopPositionChange
+            : serviceGraph
+              ? handleGraphMove
+              : handleNodePositionChange
         }
         onNodeDragLive={collabEnabled && !interactionLocked ? handleNodeDragLive : undefined}
         onNodeDragLiveEnd={collabEnabled && !interactionLocked ? handleNodeDragLiveEnd : undefined}
+        onArranged={
+          collabEnabled && !interactionLocked
+            ? () => pushLocalModel(useFlatC4Store.getState().model)
+            : undefined
+        }
         awareness={collabEnabled ? awareness : null}
         localView={presenceView}
         viewLevel={model.viewLevel}

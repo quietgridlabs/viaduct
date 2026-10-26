@@ -1,6 +1,6 @@
 import { getElementGroup, GROUP_NODE_PREFIX, isGroupFrameNodeId } from '@/types/c4Extensions';
 import { CANVAS_NODE_WIDTH } from '@theme/canvasSurfaces';
-import type { Node } from '@xyflow/react';
+import type { Node, XYPosition } from '@xyflow/react';
 
 const FALLBACK_W = CANVAS_NODE_WIDTH;
 const FALLBACK_H = 128;
@@ -57,9 +57,18 @@ export function buildGroupFrameNodes(nodes: Node[]): Node[] {
       width,
       height,
       style: { width, height, pointerEvents: 'none', background: 'transparent', border: 'none' },
-      className: 'nodrag nopan',
-      data: { label, memberCount: members.length },
-      draggable: false,
+      /* Draggable by its title only (`dragHandle`), so the body stays canvas:
+         a click or a marquee inside the frame still reaches the board. */
+      className: 'nopan',
+      dragHandle: '.group-frame-handle',
+      data: {
+        label,
+        memberCount: members.length,
+        /* "Group" is what this is on the level diagram, where a frame gathers
+           elements sharing a group tag. Round a service graph's orbs it is a
+           system, and calling that a group tells the reader something untrue. */
+        caption: members.some((m) => m.type === 'serviceOrb') ? '' : undefined,
+      },
       selectable: false,
       connectable: false,
       focusable: false,
@@ -68,4 +77,24 @@ export function buildGroupFrameNodes(nodes: Node[]): Node[] {
     });
   }
   return frames;
+}
+
+/**
+ * Where the members land when their frame is put at `position`. The frame has
+ * no position of its own — it is derived from its members — so moving it means
+ * moving every member by the same delta.
+ */
+export function moveGroupFrame(
+  frameId: string,
+  position: XYPosition,
+  nodes: Node[]
+): { id: string; position: XYPosition }[] {
+  const frame = buildGroupFrameNodes(nodes).find((f) => f.id === frameId);
+  if (!frame) return [];
+  const dx = position.x - frame.position.x;
+  const dy = position.y - frame.position.y;
+  const key = frameId.slice(GROUP_NODE_PREFIX.length);
+  return nodes
+    .filter((n) => !isGroupFrameNodeId(n.id) && getElementGroup(n.data).toLowerCase() === key)
+    .map((n) => ({ id: n.id, position: { x: n.position.x + dx, y: n.position.y + dy } }));
 }

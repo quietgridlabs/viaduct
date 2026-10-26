@@ -59,6 +59,8 @@ export interface FlowCanvasProps {
     target?: string | null;
   } | null;
   canDelete?: boolean;
+  /** After Arrange rewrites positions — e.g. push the model on a live session. */
+  onArranged?: () => void;
   /** Community has no thread nodes — accepted and ignored. */
   onThreadDelete?: (threadId: string) => Promise<boolean>;
 }

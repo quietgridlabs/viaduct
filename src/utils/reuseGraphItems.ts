@@ -46,6 +46,12 @@ function edgeVisualKey(edge: Edge): string {
     edge.id,
     edge.source,
     edge.target,
+    /* Which face the line leaves and lands on. Left out, an edge that only
+       changed anchors kept its old object and kept being drawn against the
+       old sides — arranging rewrote the handles in the model and the canvas
+       never showed it. */
+    edge.sourceHandle,
+    edge.targetHandle,
     edge.type,
     edge.label,
     d?.pathType,

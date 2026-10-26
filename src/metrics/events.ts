@@ -34,6 +34,8 @@ export const METRIC_EVENTS = [
   'editor.element_deleted',
   'editor.connection_added',
   'editor.clone_created',
+  'editor.service_graph',
+  'editor.arrange',
 
   // Overlays / capabilities
   'docs.opened',

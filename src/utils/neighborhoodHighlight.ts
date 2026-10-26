@@ -11,7 +11,7 @@ export type NeighborhoodHighlight = {
   flowMotion?: Map<string, FlowEdgeMotion>;
 };
 
-type BlockLike = {
+export type BlockLike = {
   id: string;
   connections?: { targetId: string; bidirectional?: boolean }[];
 };
@@ -40,7 +40,20 @@ export function resolveNeighborhood(
   model: FlatC4Model,
   nodeId: string
 ): NeighborhoodHighlight {
-  const pool = blocksForView(model);
+  return resolveNeighborhoodIn(blocksForView(model), nodeId);
+}
+
+/**
+ * The same hop, over a pool somebody else chose.
+ *
+ * The level view asks about the level it is on; the service graph asks about
+ * the systems and containers it drew, which belong to two levels at once. Same
+ * question either way, so it is the same code — only the pool differs.
+ */
+export function resolveNeighborhoodIn(
+  pool: BlockLike[],
+  nodeId: string
+): NeighborhoodHighlight {
   const byId = new Map(pool.map((b) => [b.id, b]));
   if (!byId.has(nodeId)) {
     return { nodeIds: new Set(), edgeIds: new Set() };

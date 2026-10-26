@@ -132,7 +132,7 @@ import {
 import { ensureNavTrailRoot } from '@/navigation/navTrail';
 import { useGlassSurface } from '@theme/glassSurfaces';
 import { trackProductEvent } from '@/metrics';
-import { Box, HStack, Text } from '@chakra-ui/react';
+import { Box, Button, HStack, Text } from '@chakra-ui/react';
 import QuackSpinner from '@components/QuackSpinner';
 import ToolbarSlot from '@slots/ToolbarSlot';
 import {
@@ -155,6 +155,12 @@ import {
 import { useEditorProject } from '@widgets/editor-workspace/hooks/useEditorProject';
 import { ReactFlowProvider, type Edge, type Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import {
+  clearArrangeUndo,
+  getArrangeUndo,
+  subscribeArrangeUndo,
+} from '@/state/arrangeUndo';
+import { startModelHistory, undoModelChange } from '@/state/modelHistory';
 import React, { startTransition, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
@@ -579,12 +585,68 @@ function EditorWorkspace({ projectMode = false, initialOverlay = null }: EditorW
   const noticeTop = guestBarVisible ? 118 : 64;
   const FLOAT_NOTICE_STEP = 48;
 
+  const arrangeUndo = useSyncExternalStore(subscribeArrangeUndo, getArrangeUndo);
+  const currentViewKey = [
+    model.viewLevel,
+    model.activeSystemId || '',
+    model.activeContainerId || '',
+    model.activeComponentId || '',
+  ].join('|');
+  /* The offer belongs to the diagram it was made on. Drilling into a container
+     and pressing undo there would put back positions from a level above. */
+  useEffect(() => {
+    if (arrangeUndo && arrangeUndo.viewKey !== currentViewKey) clearArrangeUndo();
+  }, [arrangeUndo, currentViewKey]);
+  useEffect(() => clearArrangeUndo, []);
+
+
   const { synced, peers, setLocalCursor, setLocalDragging, setEditingLock, getEditingLock, awareness, pushLocalModel } = useYjsProject({
     projectId: projectId || '',
     user,
     enabled: collabEnabled && Boolean(user),
     canWrite,
   });
+
+  /* Record every edit while the editor is up — see state/modelHistory.ts. */
+  useEffect(() => startModelHistory(), []);
+
+  /* Ctrl/⌘+Z. A pending arrange is taken back first: it is the thing the
+     person was just asked about, and the bar is still on screen offering it.
+     Everything else goes to the model history — one press, one edit.
+     Kept here rather than on the canvas hook so it tracks the same arrange
+     snapshot the bar renders from, and uses capture so the pane cannot
+     swallow it. */
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
+      if (event.code !== 'KeyZ') return;
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        if (target.isContentEditable) return;
+        if (target.closest('.monaco-editor, .native-edit-context')) return;
+      }
+      /* Nothing here may be written — a viewer, an old version, or the duck
+         hop owning the canvas. Undo would either bounce or rewrite something
+         they cannot save. */
+      if (canvasLocked) return;
+      if (arrangeUndo) {
+        event.preventDefault();
+        event.stopPropagation();
+        arrangeUndo.revert();
+        clearArrangeUndo();
+        return;
+      }
+      if (!undoModelChange()) return;
+      event.preventDefault();
+      event.stopPropagation();
+      /* The undo is an edit like any other: the session has to see it. */
+      if (collabEnabled) pushLocalModel(useFlatC4Store.getState().model);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [arrangeUndo, canvasLocked, collabEnabled, pushLocalModel]);
 
   const floatNotices: {
     key: string;
@@ -1614,6 +1676,47 @@ function EditorWorkspace({ projectMode = false, initialOverlay = null }: EditorW
             peers={peers}
             onFollowPeer={collabEnabled ? handleFollowPeer : undefined}
           />
+          {arrangeUndo ? (
+            <HStack
+              position="absolute"
+              top={`${noticeTop}px`}
+              left="50%"
+              transform="translateX(-50%)"
+              zIndex={1301}
+              gap="10px"
+              px="12px"
+              py="8px"
+              fontSize="sm"
+              {...glass.floatBar}
+              data-testid="arrange-undo-bar"
+            >
+              <Text color="fg.muted">
+                {t('arrange_done', { count: arrangeUndo.moved })}
+              </Text>
+              <Button
+                size="xs"
+                variant="ghost"
+                color="fg.default"
+                data-testid="arrange-undo"
+                onClick={() => {
+                  arrangeUndo.revert();
+                  clearArrangeUndo();
+                }}
+              >
+                {t('arrange_undo')}
+              </Button>
+              <Button
+                size="xs"
+                bg="bg.neutral.emphasis"
+                color="fg.onNeutral"
+                _hover={{ bg: 'bg.neutral.emphasis.hover' }}
+                data-testid="arrange-keep"
+                onClick={clearArrangeUndo}
+              >
+                {t('arrange_keep')}
+              </Button>
+            </HStack>
+          ) : null}
           {floatNotices.map((notice, index) => (
             <HStack
               key={notice.key}

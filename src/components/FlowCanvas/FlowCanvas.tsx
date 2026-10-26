@@ -55,8 +55,9 @@ import LevelTransitionOverlay from "@components/LevelTransitionOverlay";
 import ConfirmDialog from "@components/common/ConfirmDialog";
 import { Box, HStack } from "@chakra-ui/react";
 import CanvasZoomBar from "@components/common/CanvasZoomBar";
+import { useCanvasShortcuts } from '@features/canvas-shortcuts';
 import { registerFlowInstance, unregisterFlowInstance } from "@utils/flowViewport";
-import { buildGroupFrameNodes } from "@utils/elementGroups";
+import { buildGroupFrameNodes, moveGroupFrame } from "@utils/elementGroups";
 import { isGroupFrameNodeId } from "@/types/c4Extensions";
 import type { FinalConnectionState, OnSelectionChangeParams } from "@xyflow/react";
 import ClearConnectionTracePanel from "./ClearConnectionTracePanel";
@@ -96,6 +97,7 @@ const FlowCanvas: React.FC<FlowCanvasProps> = ({
   highlightEdge = null,
   canDelete = true,
   onThreadDelete,
+  onArranged,
 }) => {
   const flowKey = viewKey || viewLevel;
   const overlayCoversCanvas = useWorkspaceOverlayCoversCanvas();
@@ -122,6 +124,7 @@ const FlowCanvas: React.FC<FlowCanvasProps> = ({
     removeComponent,
     removeCodeElement,
     removeConnection,
+    updateConnection,
   } = useFlatC4Store();
   /* Where on the C4 tree the canvas is currently looking — needed to decide
      which ghosts belong on THIS screen. A container removed from system A
@@ -139,11 +142,21 @@ const FlowCanvas: React.FC<FlowCanvasProps> = ({
     registerFlowInstance(reactFlowInstance);
     return () => unregisterFlowInstance();
   }, [reactFlowInstance]);
+  useCanvasShortcuts({
+    reactFlowInstance,
+    disabled: overlayEditorOpen,
+    canArrange: !editLocked,
+    canGraph: true,
+    onArranged,
+  });
   const { mode, chrome } = useColorMode();
   const plainEdges = useCanvasPrefs().edgeColors === 'neutral';
   const { t } = useTranslation();
   const localDraggingIdsRef = useRef<Set<string>>(new Set());
   const selectedIdsRef = useRef<string[]>([]);
+  /* the arrow whose end is being dragged; RF fires onConnectEnd before
+     onReconnectEnd, so the drop still sees it set */
+  const reconnectingRef = useRef<Edge | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{
     nodes: Node[];
     edges: Edge[];
@@ -286,6 +299,10 @@ const FlowCanvas: React.FC<FlowCanvasProps> = ({
   );
 
   const [internalNodes, setInternalNodes] = useState<Node[]>(nodes);
+  const internalNodesRef = useRef(internalNodes);
+  useEffect(() => {
+    internalNodesRef.current = internalNodes;
+  }, [internalNodes]);
 
   const { mergeWithRemoteDrags } = useRemoteNodeDrags(
     awareness,
@@ -333,31 +350,45 @@ const FlowCanvas: React.FC<FlowCanvasProps> = ({
   }, [nodes, mergeWithRemoteDrags]);
 
   const handleNodesChange = useCallback((changes: NodeChange[]) => {
-    const next = changes.filter((c) => !('id' in c) || !isGroupFrameNodeId(String(c.id)));
-    if (!next.length) return;
-    setInternalNodes((nds) => applyNodeChanges(next, nds));
+    setInternalNodes((nds) => {
+      // a dragged frame moves its members instead of itself
+      const next = changes.flatMap((c): NodeChange[] => {
+        if (!('id' in c) || !isGroupFrameNodeId(c.id)) return [c];
+        if (c.type !== 'position' || !c.position) return [];
+        return moveGroupFrame(c.id, c.position, nds).map((m) => ({ ...c, ...m }));
+      });
+      return next.length ? applyNodeChanges(next, nds) : nds;
+    });
   }, []);
+
+  const withFramesAsMembers = useCallback(
+    (xs: Node[]) =>
+      xs.flatMap((n) =>
+        isGroupFrameNodeId(n.id) ? moveGroupFrame(n.id, n.position, internalNodesRef.current) : [n]
+      ),
+    []
+  );
 
   const handleNodeDrag = useCallback(
     (_: React.MouseEvent, node: Node, dragged: Node[]) => {
       if (!onNodeDragLive) return;
-      const list = dragged?.length ? dragged : [node];
+      const list = withFramesAsMembers(dragged?.length ? dragged : [node]);
       localDraggingIdsRef.current = new Set(list.map((n) => n.id));
       onNodeDragLive(list.map((n) => ({ id: n.id, position: n.position })));
     },
-    [onNodeDragLive]
+    [onNodeDragLive, withFramesAsMembers]
   );
 
   const handleNodeDragStop = useCallback(
     (_: React.MouseEvent, node: Node, dragged: Node[]) => {
-      const list = dragged?.length ? dragged : [node];
+      const list = withFramesAsMembers(dragged?.length ? dragged : [node]);
       localDraggingIdsRef.current = new Set();
       for (const n of list) {
         onNodePositionChange(n.id, n.position);
       }
       onNodeDragLiveEnd?.();
     },
-    [onNodePositionChange, onNodeDragLiveEnd]
+    [onNodePositionChange, onNodeDragLiveEnd, withFramesAsMembers]
   );
 
   const handleNodeDoubleClick = useCallback(
@@ -688,12 +719,32 @@ const FlowCanvas: React.FC<FlowCanvasProps> = ({
      ends quietly for them instead of offering a search that cannot work. */
   const handleConnectEnd = useCallback(
     (event: MouseEvent | TouchEvent, connectionState: FinalConnectionState) => {
-      if (canvasReadOnly || guestSession || isDuckHopActive()) return;
+      if (canvasReadOnly || guestSession || isDuckHopActive() || reconnectingRef.current) return;
       if (connectionState.fromNode && !connectionState.toNode) {
         setPendingConnection({ event, connectionState });
       }
     },
     [canvasReadOnly, guestSession, setPendingConnection]
+  );
+
+  const handleReconnectStart = useCallback((_: React.MouseEvent, edge: Edge) => {
+    reconnectingRef.current = edge;
+  }, []);
+
+  const handleReconnectEnd = useCallback(() => {
+    reconnectingRef.current = null;
+  }, []);
+
+  // only the attachment side moves; isValidConnection keeps both cards the same
+  const handleReconnect = useCallback(
+    (oldEdge: Edge, connection: Connection) => {
+      if (isDuckHopActive()) return;
+      updateConnection(viewLevel, oldEdge.source, oldEdge.target, {
+        sourceHandle: connection.sourceHandle,
+        targetHandle: connection.targetHandle,
+      });
+    },
+    [updateConnection, viewLevel]
   );
 
   const blockContextMenu = useCallback((event: React.MouseEvent) => event.preventDefault(), []);
@@ -749,6 +800,14 @@ const FlowCanvas: React.FC<FlowCanvasProps> = ({
     (connectionState: Edge | Connection) => {
       if (connectionState.source === connectionState.target) {
         return false;
+      }
+
+      // a moved end may land on another side of the same card, not on another card
+      const moving = reconnectingRef.current;
+      if (moving) {
+        return (
+          connectionState.source === moving.source && connectionState.target === moving.target
+        );
       }
 
       const sourceNode = getBlockById(connectionState.source);
@@ -864,6 +923,9 @@ const FlowCanvas: React.FC<FlowCanvasProps> = ({
           onBeforeDelete={canDelete ? handleBeforeDelete : undefined}
           isValidConnection={isValidConnection}
           onConnectEnd={handleConnectEnd}
+          onReconnect={editLocked ? undefined : handleReconnect}
+          onReconnectStart={handleReconnectStart}
+          onReconnectEnd={handleReconnectEnd}
         >
           <Background
             variant={BackgroundVariant.Dots}
@@ -874,7 +936,7 @@ const FlowCanvas: React.FC<FlowCanvasProps> = ({
           />
           <Panel position="bottom-left" style={{ margin: 12 }}>
             <HStack gap="8px" align="center">
-              <CanvasZoomBar />
+              <CanvasZoomBar canArrange={!editLocked} onArranged={onArranged} canGraph />
               {bottomLeft}
             </HStack>
           </Panel>

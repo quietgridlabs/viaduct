@@ -92,7 +92,8 @@ export default function BaseEditDialog({
       if (document.querySelector('[data-testid="http-contract-dialog"]')) return;
       if (document.querySelector('[data-testid="channel-schema-dialog"]')) return;
       if (document.querySelector('[data-testid="protobuf-contract-dialog"]')) return;
-      if (document.querySelector('[role="listbox"]')) return;
+      // closed chakra listboxes stay mounted with `hidden`; only an open one owns Esc
+      if (document.querySelector('[role="listbox"]:not([hidden])')) return;
       onClose();
     };
     document.addEventListener('keydown', onKey);

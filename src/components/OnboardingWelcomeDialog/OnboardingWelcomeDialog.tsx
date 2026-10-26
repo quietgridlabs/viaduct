@@ -1,4 +1,5 @@
 import { useFlatC4Store } from '@archivisio/c4-modelizer-sdk';
+import { clearModelHistory, suspendModelHistory } from '@/state/modelHistory';
 import { useGlassSurface } from '@theme/glassSurfaces';
 import { ArrowRight, FilePlus2, LayoutTemplate } from 'lucide-react';
 import {
@@ -34,6 +35,9 @@ export default function OnboardingWelcomeDialog({
 
   const finishLocal = () => {
     completedRef.current = true;
+    /* Whichever way the canvas was filled — here or by the host's callback —
+       the document is new, so there is nothing behind it to undo into. */
+    clearModelHistory();
     markOnboardingSeen();
     onClose();
   };
@@ -44,7 +48,9 @@ export default function OnboardingWelcomeDialog({
       if (onLocalTemplate) {
         onLocalTemplate();
       } else {
-        useFlatC4Store.getState().setModel(buildStarterModel());
+        /* Opening a document, not editing one: nothing before it is a step
+           undo may reach back into. */
+        suspendModelHistory(() => useFlatC4Store.getState().setModel(buildStarterModel()));
       }
       finishLocal();
     } finally {
@@ -58,13 +64,15 @@ export default function OnboardingWelcomeDialog({
       if (onLocalBlank) {
         onLocalBlank();
       } else {
-        useFlatC4Store.getState().setModel({
-          viewLevel: 'system',
-          systems: [],
-          containers: [],
-          components: [],
-          codeElements: [],
-        });
+        suspendModelHistory(() =>
+          useFlatC4Store.getState().setModel({
+            viewLevel: 'system',
+            systems: [],
+            containers: [],
+            components: [],
+            codeElements: [],
+          })
+        );
       }
       finishLocal();
     } finally {

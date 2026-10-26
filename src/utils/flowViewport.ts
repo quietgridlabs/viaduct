@@ -42,3 +42,27 @@ export function screenCenterToFlow(): { x: number; y: number } {
     y: window.innerHeight / 2,
   });
 }
+
+/**
+ * Frame everything on the canvas, from outside the React Flow tree.
+ *
+ * The service graph is laid out asynchronously and lands nowhere near the
+ * diagram's viewport, so whoever finishes building it has to frame it — and
+ * that is not a component with `useReactFlow` to hand. Silently does nothing
+ * before a canvas has registered, which is the right answer: there is no view
+ * to fit yet.
+ */
+export function fitFlowView(options?: { padding?: number; duration?: number }): void {
+  void _instance?.fitView({ padding: 0.2, duration: 380, ...options });
+}
+
+export type FlowViewport = { x: number; y: number; zoom: number };
+
+/** Where the canvas is looking, or null before one has registered. */
+export function getFlowViewport(): FlowViewport | null {
+  return _instance?.getViewport() ?? null;
+}
+
+export function setFlowViewport(viewport: FlowViewport, duration = 380): void {
+  void _instance?.setViewport(viewport, { duration });
+}
